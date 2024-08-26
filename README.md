@@ -8,13 +8,11 @@
 
 <div align="center">
 
-[![sync status](https://github.com/doocs/md/workflows/Sync/badge.svg)](https://github.com/doocs/md/actions) [![deploy status](https://github.com/doocs/md/workflows/Build%20and%20Deploy/badge.svg)](https://github.com/doocs/md/actions) [![prettier status](https://github.com/doocs/md/workflows/Prettier/badge.svg)](https://github.com/doocs/md/actions) [![users](https://badgen.net/badge/Who's/using/green)](#谁在使用) [![PRs Welcome](https://badgen.net/badge/PRs/welcome/green)](../../pulls)<br> [![github](https://badgen.net/badge/⭐/GitHub/blue)](https://github.com/doocs/md) [![gitee](https://badgen.net/badge/⭐/Gitee/blue)](https://gitee.com/doocs/md) [![gitee](https://badgen.net/badge/⭐/GitCode/blue)](https://gitcode.com/doocs/md) [![license](https://badgen.net/github/license/doocs/md)](./LICENSE) [![release](https://img.shields.io/github/v/release/doocs/md.svg)](../../releases)
+[![deploy status](https://github.com/doocs/md/workflows/Build%20and%20Deploy/badge.svg)](https://github.com/doocs/md/actions) [![users](https://badgen.net/badge/Who's/using/green)](#谁在使用) [![PRs Welcome](https://badgen.net/badge/PRs/welcome/green)](../../pulls)<br>[![license](https://badgen.net/github/license/doocs/md)](./LICENSE) [![github](https://badgen.net/badge/⭐/GitHub/blue)](https://github.com/doocs/md) [![gitee](https://badgen.net/badge/⭐/Gitee/blue)](https://gitee.com/doocs/md) [![gitee](https://badgen.net/badge/⭐/GitCode/blue)](https://gitcode.com/doocs/md) [![release](https://img.shields.io/github/v/release/doocs/md.svg)](../../releases)
 
 </div>
 
 ## 项目介绍
-
-> 本项目基于 [wechat-format](https://github.com/lyricat/wechat-format) 进行二次开发，感谢 [lyricat](https://github.com/lyricat) 的创意和贡献！
 
 Markdown 文档自动即时渲染为微信图文，让你不再为微信文章排版而发愁！只要你会基本的 Markdown 语法，就能做出一篇样式简洁而又美观大方的微信图文。
 
@@ -35,7 +33,7 @@ Markdown 文档自动即时渲染为微信图文，让你不再为微信文章�
 - [x] 支持自定义 CSS 样式
 - [x] 支持 Markdown 所有基础语法
 - [x] 支持浅色、暗黑两种主题模式
-- [x] 支持 <kbd>Ctrl</kbd> + <kbd>F</kbd> 快速格式化文档
+- [x] 支持 <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> 快速格式化文档
 - [x] 支持色盘取色，快速替换文章整体色调
 - [x] 支持多图上传，可自定义配置图床
 - [x] 支持自定义上传逻辑

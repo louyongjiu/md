@@ -5,15 +5,11 @@ import CodeMirror from 'codemirror'
 import { useDark, useStorage, useToggle } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { codeBlockThemeOptions, colorOptions, fontFamilyOptions, fontSizeOptions, legendOptions, themeMap, themeOptions } from '@/config'
+import { altKey, codeBlockThemeOptions, colorOptions, fontFamilyOptions, fontSizeOptions, legendOptions, shiftKey, themeMap, themeOptions } from '@/config'
 import WxRenderer from '@/utils/wx-renderer'
 import DEFAULT_CONTENT from '@/assets/example/markdown.md?raw'
 import DEFAULT_CSS_CONTENT from '@/assets/example/theme-css.txt?raw'
 import { addPrefix, css2json, customCssWithTemplate, downloadMD, exportHTML, formatCss, formatDoc, setColorWithCustomTemplate, setFontSizeWithTemplate, setTheme } from '@/utils'
-
-const defaultKeyMap = CodeMirror.keyMap.default
-const modPrefix
-  = defaultKeyMap === CodeMirror.keyMap.macDefault ? `Cmd` : `Ctrl`
 
 export const useStore = defineStore(`store`, () => {
   // 是否开启深色模式
@@ -87,8 +83,9 @@ export const useStore = defineStore(`store`, () => {
   // 更新编辑器
   const editorRefresh = () => {
     codeThemeChange()
-
-    const renderer = wxRenderer.getRenderer(isCiteStatus.value)
+    const renderer = wxRenderer
+    renderer.reset()
+    renderer.setOptions({ status: isCiteStatus.value, legend: legend.value })
     marked.setOptions({ renderer })
     let outputTemp = marked.parse(editor.value.getValue(0))
 
@@ -142,15 +139,19 @@ export const useStore = defineStore(`store`, () => {
   // 自定义 CSS 内容
   const cssContent = useStorage(`__css_content`, DEFAULT_CSS_CONTENT)
   const cssContentConfig = useStorage(addPrefix(`css_content_config`), {
-    active: `方案 1`,
+    active: `方案1`,
     tabs: [
       {
-        title: `方案 1`,
-        name: `方案 1`,
+        title: `方案1`,
+        name: `方案1`,
         // 兼容之前的方案
         content: cssContent.value || DEFAULT_CSS_CONTENT,
       },
     ],
+  })
+  onMounted(() => {
+    // 清空过往历史记录
+    cssContent.value = ``
   })
   const getCurrentTab = () => cssContentConfig.value.tabs.find((tab) => {
     return tab.name === cssContentConfig.value.active
@@ -161,6 +162,14 @@ export const useStore = defineStore(`store`, () => {
       return tab.name === name
     }).content
     setCssEditorValue(content)
+  }
+
+  // 重命名 css 方案
+  const renameTab = (name) => {
+    const tab = getCurrentTab()
+    tab.title = name
+    tab.name = name
+    cssContentConfig.value.active = name
   }
 
   const addCssContentTab = (name) => {
@@ -200,7 +209,7 @@ export const useStore = defineStore(`store`, () => {
         matchBrackets: true,
         autofocus: true,
         extraKeys: {
-          [`${modPrefix}-F`]: function autoFormat(editor) {
+          [`${shiftKey}-${altKey}-F`]: function autoFormat(editor) {
             const doc = formatCss(editor.getValue())
             getCurrentTab().content = doc
             editor.setValue(doc)
@@ -438,6 +447,7 @@ export const useStore = defineStore(`store`, () => {
     validatorTabName,
     setCssEditorValue,
     tabChanged,
+    renameTab,
   }
 })
 

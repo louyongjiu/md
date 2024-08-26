@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, toRaw } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import CodeMirror from 'codemirror'
@@ -9,10 +9,27 @@ import { useStore } from '@/stores'
 
 import EditorHeader from '@/components/CodemirrorEditor/EditorHeader/index.vue'
 import InsertFormDialog from '@/components/CodemirrorEditor/InsertFormDialog.vue'
-import RightClickMenu from '@/components/CodemirrorEditor/RightClickMenu.vue'
 import UploadImgDialog from '@/components/CodemirrorEditor/UploadImgDialog.vue'
 import CssEditor from '@/components/CodemirrorEditor/CssEditor.vue'
 import RunLoading from '@/components/RunLoading.vue'
+
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+
+import { altKey, altSign, ctrlKey, ctrlSign, shiftKey, shiftSign } from '@/config'
 
 import {
   checkImage,
@@ -21,10 +38,6 @@ import {
 } from '@/utils'
 
 import 'codemirror/mode/javascript/javascript'
-
-const defaultKeyMap = CodeMirror.keyMap.default
-const modPrefix
-  = defaultKeyMap === CodeMirror.keyMap.macDefault ? `Cmd` : `Ctrl`
 
 const store = useStore()
 const { output, editor, editorContent, isShowCssEditor } = storeToRefs(store)
@@ -42,9 +55,6 @@ const {
 
 const isImgLoading = ref(false)
 const timeout = ref(0)
-const mouseLeft = ref(0)
-const mouseTop = ref(0)
-const rightClickMenuVisible = ref(false)
 
 const preview = ref(null)
 
@@ -119,34 +129,6 @@ function endCopy() {
   }, 800)
 }
 
-function onMenuEvent(type) {
-  switch (type) {
-    case `insertPic`:
-      toggleShowUploadImgDialog()
-      break
-    case `insertTable`:
-      toggleShowInsertFormDialog()
-      break
-    case `resetStyle`:
-      resetStyleConfirm()
-      break
-    case `importMarkdown`:
-      importMarkdownContent()
-      break
-    case `exportMarkdown`:
-      exportEditorContent2MD()
-      break
-    case `exportHtml`:
-      exportEditorContent2HTML()
-      break
-    case `formatMarkdown`:
-      formatContent()
-      break
-    default:
-      break
-  }
-}
-
 function beforeUpload(file) {
   // validate image
   const checkResult = checkImage(file)
@@ -170,7 +152,6 @@ function beforeUpload(file) {
 
 // 图片上传结束
 function uploaded(imageUrl) {
-  console.log(`图片上传之后: `, imageUrl)
   if (!imageUrl) {
     ElMessage.error(`上传图片未知异常`)
     return
@@ -180,29 +161,29 @@ function uploaded(imageUrl) {
   const cursor = editor.value.getCursor()
   const markdownImage = `![](${imageUrl})`
   // 将 Markdown 形式的 URL 插入编辑框光标所在位置
-  editor.value.replaceSelection(`\n${markdownImage}\n`, cursor)
+  toRaw(store.editor).replaceSelection(`\n${markdownImage}\n`, cursor)
   ElMessage.success(`图片上传成功`)
-  formatContent()
-  onEditorRefresh()
 }
 function uploadImage(file, cb) {
   isImgLoading.value = true
+
   toBase64(file)
-    .then((base64Content) => {
-      fileApi
-        .fileUpload(base64Content, file)
-        .then((url) => {
-          console.log(url)
-          cb ? cb(url) : uploaded(url)
-        })
-        .catch((err) => {
-          ElMessage.error(err.message)
-        })
+    .then(base64Content => fileApi.fileUpload(base64Content, file))
+    .then((url) => {
+      console.log(url)
+      if (cb) {
+        cb(url)
+      }
+      else {
+        uploaded(url)
+      }
     })
     .catch((err) => {
       ElMessage.error(err.message)
     })
-  isImgLoading.value = false
+    .finally(() => {
+      isImgLoading.value = false
+    })
 }
 
 const changeTimer = ref(0)
@@ -222,32 +203,32 @@ function initEditor() {
     styleActiveLine: true,
     autoCloseBrackets: true,
     extraKeys: {
-      [`${modPrefix}-F`]: function autoFormat(editor) {
+      [`${shiftKey}-${altKey}-F`]: function autoFormat(editor) {
         const doc = formatDoc(editor.getValue(0))
         editor.setValue(doc)
       },
-      [`${modPrefix}-B`]: function bold(editor) {
+      [`${ctrlKey}-B`]: function bold(editor) {
         const selected = editor.getSelection()
         editor.replaceSelection(`**${selected}**`)
       },
-      [`${modPrefix}-I`]: function italic(editor) {
+      [`${ctrlKey}-I`]: function italic(editor) {
         const selected = editor.getSelection()
         editor.replaceSelection(`*${selected}*`)
       },
-      [`${modPrefix}-D`]: function del(editor) {
+      [`${ctrlKey}-D`]: function del(editor) {
         const selected = editor.getSelection()
         editor.replaceSelection(`~~${selected}~~`)
       },
-      [`${modPrefix}-K`]: function italic(editor) {
+      [`${ctrlKey}-K`]: function italic(editor) {
         const selected = editor.getSelection()
         editor.replaceSelection(`[${selected}]()`)
       },
-      [`${modPrefix}-E`]: function code(editor) {
+      [`${ctrlKey}-E`]: function code(editor) {
         const selected = editor.getSelection()
         editor.replaceSelection(`\`${selected}\``)
       },
       // 预备弃用
-      [`${modPrefix}-L`]: function code(editor) {
+      [`${ctrlKey}-L`]: function code(editor) {
         const selected = editor.getSelection()
         editor.replaceSelection(`\`${selected}\``)
       },
@@ -280,32 +261,9 @@ function initEditor() {
       }
     }
   })
-
-  editor.value.on(`mousedown`, () => {
-    rightClickMenuVisible.value = false
-  })
-  editor.value.on(`blur`, () => {
-    // !影响到右键菜单的点击事件，右键菜单的点击事件在组件内通过mousedown触发
-    rightClickMenuVisible.value = false
-  })
-  editor.value.on(`scroll`, () => {
-    rightClickMenuVisible.value = false
-  })
 }
 
 const container = ref(null)
-
-// 右键菜单
-function openMenu(e) {
-  const menuMinWidth = 105
-  const offsetLeft = container.value.getBoundingClientRect().left
-  const offsetWidth = container.value.offsetWidth
-  const maxLeft = offsetWidth - menuMinWidth
-  const left = e.clientX - offsetLeft
-  mouseLeft.value = Math.min(maxLeft, left)
-  mouseTop.value = e.clientY + 10
-  rightClickMenuVisible.value = true
-}
 
 // 工具函数，添加格式
 function addFormat(cmd) {
@@ -441,13 +399,41 @@ onMounted(() => {
             :class="{
               'order-1': !store.isEditOnLeft,
             }"
-            @contextmenu.prevent="openMenu"
           >
-            <textarea
-              id="editor"
-              type="textarea"
-              placeholder="Your markdown text here."
-            />
+            <ContextMenu>
+              <ContextMenuTrigger>
+                <textarea
+                  id="editor"
+                  type="textarea"
+                  placeholder="Your markdown text here."
+                />
+              </ContextMenuTrigger>
+              <ContextMenuContent class="w-64">
+                <ContextMenuItem inset @click="toggleShowUploadImgDialog()">
+                  上传图片
+                </ContextMenuItem>
+                <ContextMenuItem inset @click="toggleShowInsertFormDialog()">
+                  插入表格
+                </ContextMenuItem>
+                <ContextMenuItem inset @click="resetStyleConfirm()">
+                  恢复默认样式
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem inset @click="importMarkdownContent()">
+                  导入 .md 文档
+                </ContextMenuItem>
+                <ContextMenuItem inset @click="exportEditorContent2MD()">
+                  导出 .md 文档
+                </ContextMenuItem>
+                <ContextMenuItem inset @click="exportEditorContent2HTML()">
+                  导出 .html
+                </ContextMenuItem>
+                <ContextMenuItem inset @click="formatContent()">
+                  格式化
+                  <ContextMenuShortcut>{{ altSign }} + {{ shiftSign }} + F</ContextMenuShortcut>
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           </el-col>
           <el-col
             id="preview"
@@ -479,14 +465,6 @@ onMounted(() => {
     />
 
     <InsertFormDialog />
-
-    <RightClickMenu
-      :visible="rightClickMenuVisible"
-      :left="mouseLeft"
-      :top="mouseTop"
-      @menu-tick="onMenuEvent"
-      @close-menu="rightClickMenuVisible = false"
-    />
 
     <RunLoading />
   </div>
