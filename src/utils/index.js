@@ -9,110 +9,43 @@ export function addPrefix(str) {
   return `${prefix}__${str}`
 }
 
-function createCustomTheme(theme, color, isDefault = true) {
-  const customTheme = JSON.parse(JSON.stringify(theme))
-  customTheme.block.h1[`border-bottom`] = `2px solid ${color}`
-  customTheme.block.h2.background = color
-  customTheme.block.h3[`border-left`] = `3px solid ${color}`
-  customTheme.block.h4.color = color
-  customTheme.inline.strong.color = color
-
-  if (!isDefault) {
-    customTheme.block.h3[`border-bottom`] = `1px dashed ${color}`
-    customTheme.block.blockquote[`border-left`] = `4px solid ${color}`
-  }
-
-  return customTheme
-}
-
-// 设置自定义颜色
-export function setColorWithTemplate(theme) {
-  return (color) => {
-    return createCustomTheme(theme, color)
-  }
-}
-
-export function setColorWithCustomTemplate(theme, color, isDefault = true) {
-  return createCustomTheme(theme, color, isDefault)
-}
-
-// 设置自定义字体大小
-export function setFontSizeWithTemplate(template) {
-  return function (fontSize, isDefault = true) {
-    const customTheme = JSON.parse(JSON.stringify(template))
-    if (isDefault) {
-      customTheme.block.h1[`font-size`] = `${fontSize * 1.2}px`
-      customTheme.block.h2[`font-size`] = `${fontSize * 1.2}px`
-      customTheme.block.h3[`font-size`] = `${fontSize * 1.1}px`
-      customTheme.block.h4[`font-size`] = `${fontSize}px`
+export function customizeTheme(theme, options) {
+  const newTheme = JSON.parse(JSON.stringify(theme))
+  const { fontSize, color } = options
+  if (fontSize) {
+    for (let i = 1; i <= 4; i++) {
+      const v = newTheme.block[`h${i}`][`font-size`]
+      newTheme.block[`h${i}`][`font-size`] = `${fontSize * Number.parseFloat(v)}px`
     }
-    else {
-      customTheme.block.h1[`font-size`] = `${fontSize * 1.4}px`
-      customTheme.block.h2[`font-size`] = `${fontSize * 1.3}px`
-      customTheme.block.h3[`font-size`] = `${fontSize * 1.2}px`
-      customTheme.block.h4[`font-size`] = `${fontSize * 1.1}px`
-    }
-
-    return customTheme
   }
-}
-
-export function setTheme(theme, fontSize, color, isDefault) {
-  return setColorWithCustomTemplate(setFontSizeWithTemplate(theme)(fontSize, isDefault), color, isDefault)
+  if (color) {
+    newTheme.base[`--md-primary-color`] = color
+  }
+  return newTheme
 }
 
 export function customCssWithTemplate(jsonString, color, theme) {
-  // block
-  const customTheme = createCustomTheme(theme, color)
+  const newTheme = customizeTheme(theme, { color });
 
-  customTheme.block.h1 = Object.assign(customTheme.block.h1, jsonString.h1)
-  customTheme.block.h2 = Object.assign(customTheme.block.h2, jsonString.h2)
-  customTheme.block.h3 = Object.assign(customTheme.block.h3, jsonString.h3)
-  customTheme.block.h4 = Object.assign(customTheme.block.h4, jsonString.h4)
-  customTheme.block.code = Object.assign(
-    customTheme.block.code,
-    jsonString.code,
-  )
-  customTheme.block.p = Object.assign(customTheme.block.p, jsonString.p)
-  customTheme.block.hr = Object.assign(customTheme.block.hr, jsonString.hr)
-  customTheme.block.blockquote = Object.assign(
-    customTheme.block.blockquote,
-    jsonString.blockquote,
-  )
-  customTheme.block.blockquote_p = Object.assign(
-    customTheme.block.blockquote_p,
-    jsonString.blockquote_p,
-  )
-  customTheme.block.image = Object.assign(
-    customTheme.block.image,
-    jsonString.image,
-  )
+  const mergeProperties = (target, source, keys) => {
+    keys.forEach(key => {
+      if (source[key]) {
+        target[key] = Object.assign(target[key] || {}, source[key]);
+      }
+    });
+  };
 
-  // inline
-  customTheme.inline.strong = Object.assign(
-    customTheme.inline.strong,
-    jsonString.strong,
-  )
-  customTheme.inline.codespan = Object.assign(
-    customTheme.inline.codespan,
-    jsonString.codespan,
-  )
-  customTheme.inline.link = Object.assign(
-    customTheme.inline.link,
-    jsonString.link,
-  )
-  customTheme.inline.wx_link = Object.assign(
-    customTheme.inline.wx_link,
-    jsonString.wx_link,
-  )
-  customTheme.block.ul = Object.assign(customTheme.block.ul, jsonString.ul)
-  customTheme.block.ol = Object.assign(customTheme.block.ol, jsonString.ol)
-  customTheme.inline.listitem = Object.assign(
-    customTheme.inline.listitem,
-    jsonString.li,
-  )
-  return customTheme
+  const blockKeys = [
+    'h1', 'h2', 'h3', 'h4', 'code', 'p', 'hr', 'blockquote',
+    'blockquote_p', 'image', 'ul', 'ol'
+  ];
+  const inlineKeys = ['strong', 'codespan', 'link', 'wx_link', 'listitem'];
+
+  mergeProperties(newTheme.block, jsonString, blockKeys);
+  mergeProperties(newTheme.inline, jsonString, inlineKeys);
+  return newTheme;
 }
+
 
 /**
  * 将 CSS 字符串转换为 JSON 对象

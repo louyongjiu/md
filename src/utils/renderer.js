@@ -28,7 +28,7 @@ class WxRenderer extends Renderer {
   merge = (base, extend) => ({ ...base, ...extend })
 
   buildTheme = (themeTpl) => {
-    const base = this.merge(themeTpl.BASE, {
+    const base = this.merge(themeTpl.base, {
       'font-family': this.opts.fonts,
       'font-size': this.opts.size,
     })
@@ -172,7 +172,7 @@ class WxRenderer extends Renderer {
         if (token.type === `list`) {
           listItems.push(this.list(token))
         }
-        else {
+        else if (token.type !== `space`) {
           listItems.push(this.listitem([token], prefix))
         }
       }
