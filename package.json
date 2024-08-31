@@ -19,7 +19,6 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "@vueuse/core": "^11.0.1",
-    "ali-oss": "^6.21.0",
     "axios": "^1.7.4",
     "buffer-from": "^1.1.2",
     "class-variance-authority": "^0.7.0",
@@ -46,6 +45,7 @@
     "radix-vue": "^1.9.4",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "tiny-oss": "^0.5.1",
     "uuid": "^10.0.0",
     "vue": "^3.4.38"
   },
@@ -54,7 +54,6 @@
     "@types/codemirror": "^5.60.15",
     "@types/marked": "^4.0.0",
     "@types/node": "^22.4.1",
-    "@types/prettier": "^2.7.3",
     "@unocss/eslint-plugin": "^0.62.2",
     "@vitejs/plugin-vue": "^5.1.2",
     "autoprefixer": "^10.4.20",
@@ -63,7 +62,8 @@
     "eslint-plugin-format": "^0.1.2",
     "less": "^4.2.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.8.8",
+    "postcss": "^8.4.41",
+    "prettier": "^3.3.3",
     "shx": "^0.3.4",
     "simple-git-hooks": "^2.11.1",
     "tailwindcss": "^3.4.10",
@@ -71,6 +71,7 @@
     "unocss": "^0.62.2",
     "vite": "^5.4.2",
     "vite-plugin-node-polyfills": "^0.22.0",
+    "vite-plugin-vue-devtools": "^7.3.9",
     "vue-tsc": "^2.0.29"
   },
   "simple-git-hooks": {

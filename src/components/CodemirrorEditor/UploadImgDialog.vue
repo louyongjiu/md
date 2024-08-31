@@ -30,6 +30,7 @@ const formAliOSS = ref({
   region: ``,
   path: ``,
   cdnHost: ``,
+  useSSL: true,
 })
 
 const formTxCOS = ref({
@@ -235,7 +236,6 @@ function saveQiniuConfiguration() {
       && formQiniu.value.secretKey
       && formQiniu.value.bucket
       && formQiniu.value.domain
-      && formQiniu.value.region
     )
   ) {
     ElMessage.error(`七牛云 Kodo 参数配置不全`)
@@ -381,6 +381,9 @@ function uploadImage(params) {
           <el-form-item label="Bucket 所在区域" :required="true">
             <el-input v-model.trim="formAliOSS.region" placeholder="如：oss-cn-shenzhen" />
           </el-form-item>
+          <el-form-item label="UseSSL" :required="true">
+            <el-switch v-model="formAliOSS.useSSL" active-text="是" inactive-text="否" />
+          </el-form-item>
           <el-form-item label="自定义 CDN 域名" :required="false">
             <el-input v-model.trim="formAliOSS.cdnHost" placeholder="如：https://imagecdn.alidaodao.com，可不填" />
           </el-form-item>
@@ -447,8 +450,8 @@ function uploadImage(params) {
           <el-form-item label="Bucket 对应域名" :required="true">
             <el-input v-model.trim="formQiniu.domain" placeholder="如：https://images.123ylb.cn" />
           </el-form-item>
-          <el-form-item label="存储区域" :required="true">
-            <el-input v-model.trim="formQiniu.region" placeholder="如：z2" />
+          <el-form-item label="存储区域" :required="false">
+            <el-input v-model.trim="formQiniu.region" placeholder="如：z2，可不填" />
           </el-form-item>
           <el-form-item label="存储路径" :required="false">
             <el-input v-model.trim="formQiniu.path" placeholder="如：img，可不填，默认为根目录" />
@@ -527,7 +530,6 @@ function uploadImage(params) {
   width: 55%;
   min-width: 640px;
   min-height: 615px;
-  // 消除固定的行内样式，配合 flex 布局居中元素
   margin: auto !important;
 }
 

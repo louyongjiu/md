@@ -163,7 +163,6 @@ function uploadImage(file, cb) {
   toBase64(file)
     .then(base64Content => fileApi.fileUpload(base64Content, file))
     .then((url) => {
-      console.log(url)
       if (cb) {
         cb(url)
       }
@@ -197,8 +196,9 @@ function initEditor() {
     autoCloseBrackets: true,
     extraKeys: {
       [`${shiftKey}-${altKey}-F`]: function autoFormat(editor) {
-        const doc = formatDoc(editor.getValue(0))
-        editor.setValue(doc)
+        formatDoc(editor.getValue(0)).then((doc) => {
+          editor.setValue(doc)
+        })
       },
       [`${ctrlKey}-B`]: function bold(editor) {
         const selected = editor.getSelection()
@@ -297,7 +297,6 @@ function mdLocalToRemote() {
         .replace(`](${item.matchStr})`, `](${item.url})`)
     })
     editor.value.setValue(md.str)
-    console.log(`resList`, resList, md.str)
   }
 
   dom.ondragover = evt => evt.preventDefault()
