@@ -1,15 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { nextTick, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import StyleOptionMenu from './StyleOptionMenu.vue'
-
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
-
 import {
   codeBlockThemeOptions,
   colorOptions,
@@ -18,9 +16,10 @@ import {
   legendOptions,
   themeOptions,
 } from '@/config'
-import { useStore } from '@/stores'
+import { useDisplayStore, useStore } from '@/stores'
 
 const store = useStore()
+const { toggleShowCssEditor } = useDisplayStore()
 
 const {
   theme,
@@ -42,13 +41,12 @@ const {
   codeBlockThemeChanged,
   legendChanged,
   macCodeBlockChanged,
-  toggleShowCssEditor,
 } = store
 
-const colorPicker = ref(null)
+const colorPicker = ref<HTMLElement & { show: () => void } | null>(null)
 
 function showPicker() {
-  colorPicker.value.show()
+  colorPicker.value?.show()
 }
 
 // 自定义CSS样式
@@ -56,11 +54,11 @@ function customStyle() {
   toggleShowCssEditor()
   nextTick(() => {
     if (!cssEditor.value) {
-      cssEditor.value.refresh()
+      cssEditor.value!.refresh()
     }
   })
   setTimeout(() => {
-    cssEditor.value.refresh()
+    cssEditor.value!.refresh()
   }, 50)
 }
 </script>
@@ -114,7 +112,7 @@ function customStyle() {
             自定义主题色
           </HoverCardTrigger>
           <HoverCardContent side="right" class="w-min">
-            <el-color-picker
+            <ElColorPicker
               ref="colorPicker"
               v-model="primaryColor"
               :teleported="false"

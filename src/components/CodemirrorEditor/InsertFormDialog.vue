@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, toRaw } from 'vue'
 import {
   Dialog,
@@ -8,16 +8,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-import { useStore } from '@/stores'
+import { useDisplayStore, useStore } from '@/stores'
 import { createTable } from '@/utils'
 
 const store = useStore()
+const displayStore = useDisplayStore()
 
-const { toggleShowInsertFormDialog } = store
+const { toggleShowInsertFormDialog } = displayStore
 
 const rowNum = ref(3)
 const colNum = ref(3)
-const tableData = ref({})
+const tableData = ref<Record<string, string>>({})
 
 function resetVal() {
   rowNum.value = 3
@@ -32,12 +33,12 @@ function insertTable() {
     cols: colNum.value,
     data: tableData.value,
   })
-  toRaw(store.editor).replaceSelection(`\n${table}\n`, `end`)
+  toRaw(store.editor!).replaceSelection(`\n${table}\n`, `end`)
   resetVal()
   toggleShowInsertFormDialog()
 }
 
-function onUpdate(val) {
+function onUpdate(val: boolean) {
   if (!val) {
     toggleShowInsertFormDialog(false)
   }
@@ -45,7 +46,7 @@ function onUpdate(val) {
 </script>
 
 <template>
-  <Dialog :open="store.isShowInsertFormDialog" @update:open="onUpdate">
+  <Dialog :open="displayStore.isShowInsertFormDialog" @update:open="onUpdate">
     <DialogContent>
       <DialogHeader>
         <DialogTitle>插入表格</DialogTitle>
