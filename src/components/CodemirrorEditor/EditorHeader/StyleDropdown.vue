@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-
-import StyleOptionMenu from './StyleOptionMenu.vue'
 import {
   HoverCard,
   HoverCardContent,
@@ -16,7 +12,11 @@ import {
   legendOptions,
   themeOptions,
 } from '@/config'
+
 import { useDisplayStore, useStore } from '@/stores'
+import { storeToRefs } from 'pinia'
+import { ref } from 'vue'
+import StyleOptionMenu from './StyleOptionMenu.vue'
 
 const store = useStore()
 const { toggleShowCssEditor } = useDisplayStore()
@@ -52,11 +52,6 @@ function showPicker() {
 // 自定义CSS样式
 function customStyle() {
   toggleShowCssEditor()
-  nextTick(() => {
-    if (!cssEditor.value) {
-      cssEditor.value!.refresh()
-    }
-  })
   setTimeout(() => {
     cssEditor.value!.refresh()
   }, 50)
