@@ -2,6 +2,7 @@ import type { Block, ExtendedProperties, Inline, Theme } from '@/types'
 
 import type { PropertiesHyphen } from 'csstype'
 import { prefix } from '@/config'
+import { autoSpace } from '@/utils/autoSpace'
 import juice from 'juice'
 import * as prettierPluginBabel from 'prettier/plugins/babel'
 import * as prettierPluginEstree from 'prettier/plugins/estree'
@@ -153,9 +154,10 @@ export async function formatDoc(content: string, type: `markdown` | `css` = `mar
     markdown: [prettierPluginMarkdown, prettierPluginBabel, prettierPluginEstree],
     css: [prettierPluginCss],
   }
+  const addSpaceContent = autoSpace(content)
 
   const parser = type in plugins ? type : `markdown`
-  return await format(content, {
+  return await format(addSpaceContent, {
     parser,
     plugins: plugins[parser],
   })
