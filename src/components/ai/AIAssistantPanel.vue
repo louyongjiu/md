@@ -8,6 +8,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Check, Copy, Send, Settings, Trash } from 'lucide-vue-next'
 import { nextTick, onMounted, ref, watch } from 'vue'
 
@@ -23,6 +29,9 @@ watch(dialogVisible, (val) => {
 })
 
 const input = ref(``)
+const inputHistory = ref<string[]>([])
+const historyIndex = ref<number | null>(null)
+
 const configVisible = ref(false)
 const loading = ref(false)
 const copiedIndex = ref<number | null>(null)
@@ -55,6 +64,31 @@ function handleKeydown(e: KeyboardEvent) {
   if (e.key === `Enter` && !e.shiftKey) {
     e.preventDefault()
     sendMessage()
+  }
+  else if (e.key === `ArrowUp`) {
+    e.preventDefault()
+    if (inputHistory.value.length === 0)
+      return
+    if (historyIndex.value === null) {
+      historyIndex.value = inputHistory.value.length - 1
+    }
+    else if (historyIndex.value > 0) {
+      historyIndex.value--
+    }
+    input.value = inputHistory.value[historyIndex.value] || ``
+  }
+  else if (e.key === `ArrowDown`) {
+    e.preventDefault()
+    if (historyIndex.value === null)
+      return
+    if (historyIndex.value < inputHistory.value.length - 1) {
+      historyIndex.value++
+      input.value = inputHistory.value[historyIndex.value] || ``
+    }
+    else {
+      historyIndex.value = null
+      input.value = ``
+    }
   }
 }
 
@@ -89,6 +123,9 @@ function resetMessages() {
 async function sendMessage() {
   if (!input.value.trim() || loading.value)
     return
+
+  inputHistory.value.push(input.value.trim())
+  historyIndex.value = null
 
   loading.value = true
   const userInput = input.value.trim()
@@ -187,17 +224,30 @@ async function sendMessage() {
   <Dialog v-model:open="dialogVisible">
     <DialogContent class="max-w-lg w-full rounded-xl">
       <DialogHeader class="space-y-1 flex flex-col items-start">
-        <div class="space-x-2 flex items-center">
+        <div class="space-x-1 flex items-center">
           <DialogTitle>AI 对话</DialogTitle>
 
-          <Button variant="ghost" size="icon" aria-label="配置" @click="configVisible = !configVisible">
-            <Settings class="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button variant="ghost" size="icon" aria-label="配置" @click="configVisible = !configVisible">
+                  <Settings class="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>配置参数</TooltipContent>
+            </Tooltip>
 
-          <Button variant="ghost" size="icon" aria-label="清空对话" title="清空对话内容" @click="resetMessages">
-            <Trash class="h-4 w-4 opacity-60 hover:opacity-100" />
-          </Button>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button variant="ghost" size="icon" aria-label="清空对话" @click="resetMessages">
+                  <Trash class="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>清空对话内容</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
+
         <p class="text-sm text-gray-500">
           使用 AI 助手帮助您编写和优化内容
         </p>
@@ -234,8 +284,11 @@ async function sendMessage() {
       <div v-if="!configVisible" class="relative mt-2">
         <div class="flex items-center border border-black/10 rounded-xl px-3 py-2 pr-12 shadow-sm">
           <Textarea
-            v-model="input" placeholder="说些什么……(按 Enter 发送，Shift+Enter 换行)" rows="2"
-            class="w-full resize-none border-none focus-visible:ring-0" @keydown="handleKeydown"
+            v-model="input"
+            placeholder="说些什么……(按 Enter 发送，Shift+Enter 换行)"
+            rows="2"
+            class="custom-scroll w-full resize-none overflow-y-auto border-none focus:border-none focus-visible:outline-none focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0"
+            @keydown="handleKeydown"
           />
           <Button
             :disabled="!input.trim() || loading" size="icon"
@@ -249,3 +302,16 @@ async function sendMessage() {
     </DialogContent>
   </Dialog>
 </template>
+
+<style scoped>
+.custom-scroll::-webkit-scrollbar {
+  @apply w-0 h-0;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  @apply bg-transparent;
+}
+.custom-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+</style>
