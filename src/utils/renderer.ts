@@ -1,6 +1,6 @@
 import type { ExtendedProperties, IOpts, ThemeStyles } from '@/types'
 import type { PropertiesHyphen } from 'csstype'
-import type { Renderer, RendererObject, Tokens } from 'marked'
+import type { RendererObject, Tokens } from 'marked'
 import type { ReadTimeResults } from 'reading-time'
 import { cloneDeep, toMerged } from 'es-toolkit'
 import frontMatter from 'front-matter'
@@ -12,6 +12,7 @@ import readingTime from 'reading-time'
 
 import { getStyleString } from '.'
 import markedAlert from './MDAlert'
+import markedFootnotes from './MDFootnotes'
 import { MDKatex } from './MDKatex'
 import markedSlider from './MDSlider'
 
@@ -148,8 +149,12 @@ export function initRenderer(opts: IOpts) {
   let footnoteIndex: number = 0
   let styleMapping: ThemeStyles = buildTheme(opts)
   let codeIndex: number = 0
-  let listIndex: number = 0
-  let isOrdered: boolean = false
+  const listOrderedStack: boolean[] = []
+  const listCounters: number[] = []
+
+  function getOpts(): IOpts {
+    return opts
+  }
 
   function styles(tag: string, addition: string = ``): string {
     return getStyles(styleMapping, tag, addition)
@@ -180,7 +185,7 @@ export function initRenderer(opts: IOpts) {
     if (oldStyle !== newStyle) {
       marked.use(markedAlert({ styles: styleMapping }))
       marked.use(
-        MDKatex({ nonStandard: true }, styles(`inline_katex`, `;vertical-align: middle; line-height: 1;`), styles(`block_katex`, `;text-align: center; overflow: auto;`),
+        MDKatex({ nonStandard: true }, styles(`inline_katex`, `;vertical-align: middle; line-height: 1;`), styles(`block_katex`, `;text-align: center;`),
         ),
       )
     }
@@ -261,22 +266,51 @@ export function initRenderer(opts: IOpts) {
       return styledContent(`codespan`, escapedText, `code`)
     },
 
-    listitem(item: Tokens.ListItem): string {
-      const prefix = isOrdered ? `${listIndex + 1}. ` : `• `
-      const content = item.tokens.map(t => (this[t.type as keyof Renderer] as <T>(token: T) => string)(t)).join(``)
-      return styledContent(`listitem`, `${prefix}${content}`, `li`)
+    list({ ordered, items, start = 1 }: Tokens.List) {
+      listOrderedStack.push(ordered)
+      listCounters.push(Number(start))
+
+      const html = items
+        .map(item => this.listitem(item))
+        .join(``)
+
+      listOrderedStack.pop()
+      listCounters.pop()
+
+      return styledContent(
+        ordered ? `ol` : `ul`,
+        html,
+      )
     },
 
-    list({ ordered, items, start = 1 }: Tokens.List): string {
-      const listItems = []
-      for (let i = 0; i < items.length; i++) {
-        isOrdered = ordered
-        listIndex = Number(start) + i - 1
-        const item = items[i]
-        listItems.push(this.listitem(item))
+    // 2. listitem：从栈顶取 ordered + counter，计算 prefix 并自增
+    listitem(token: Tokens.ListItem) {
+      const ordered = listOrderedStack[listOrderedStack.length - 1]
+      const idx = listCounters[listCounters.length - 1]!
+
+      // 准备下一个
+      listCounters[listCounters.length - 1] = idx + 1
+
+      const prefix = ordered
+        ? `${idx}. `
+        : `• `
+
+      // 渲染内容：优先 inline，fallback 去掉 <p> 包裹
+      let content: string
+      try {
+        content = this.parser.parseInline(token.tokens)
       }
-      const label = ordered ? `ol` : `ul`
-      return styledContent(label, listItems.join(``))
+      catch {
+        content = this.parser
+          .parse(token.tokens)
+          .replace(/^<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/, `$1`)
+      }
+
+      return styledContent(
+        `listitem`,
+        `${prefix}${content}`,
+        `li`,
+      )
     },
 
     image({ href, title, text }: Tokens.Image): string {
@@ -345,9 +379,10 @@ export function initRenderer(opts: IOpts) {
   marked.use(markedSlider({ styles: styleMapping }))
   marked.use(markedAlert({ styles: styleMapping }))
   marked.use(
-    MDKatex({ nonStandard: true }, styles(`inline_katex`, `;vertical-align: middle; line-height: 1;`), styles(`block_katex`, `;text-align: center; overflow: auto;`),
+    MDKatex({ nonStandard: true }, styles(`inline_katex`, `;vertical-align: middle; line-height: 1;`), styles(`block_katex`, `;text-align: center;`),
     ),
   )
+  marked.use(markedFootnotes())
 
   return {
     buildAddition,
@@ -359,5 +394,6 @@ export function initRenderer(opts: IOpts) {
     createContainer(content: string) {
       return styledContent(`container`, content, `section`)
     },
+    getOpts,
   }
 }

@@ -3,7 +3,7 @@ import type * as wxt from 'wxt'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { parseHTML } from 'linkedom'
-import { murmurHash } from 'ohash'
+import { hash } from 'ohash'
 import {
   addViteConfig,
   defineWxtModule,
@@ -15,6 +15,7 @@ interface FakeRollupOptions {
 export default defineWxtModule({
   async setup(wxt) {
     wxt.config.alias[`/src/main.ts`] = `./src/main.ts`
+    wxt.config.alias[`/src/sidepanel.ts`] = `./src/sidepanel.ts`
     wxt.config.manifest.options_page = `options.html`
     wxt.hook(`entrypoints:grouped`, (_, groups) => {
       groups.push([{
@@ -25,11 +26,19 @@ export default defineWxtModule({
         outputDir: wxt.config.outDir,
         skipped: false,
       }])
+      groups.push([{
+        type: `sidepanel`,
+        name: `sidepanel`,
+        options: { openAtInstall: true, browserStyle: true },
+        inputPath: path.resolve(wxt.config.root, `./index.html`),
+        outputDir: wxt.config.outDir,
+        skipped: false,
+      }])
     })
     wxt.hook(`vite:build:extendConfig`, (_, config) => {
-      if (config.build?.rollupOptions?.input && config.build?.rollupOptions?.input) {
+      if (config.build?.rollupOptions?.input && config.build?.rollupOptions?.output) {
         const input = config.build?.rollupOptions.input as Record<string, string>
-        if (input.options) {
+        if (input.options || input.sidepanel) {
           const output = config.build?.rollupOptions.output as FakeRollupOptions
           output.manualChunks = (id) => {
             if (id.includes(`prettier`)) {
@@ -55,7 +64,7 @@ export default defineWxtModule({
 })
 
 // Stored outside the plugin to effect all instances of the htmlScriptToVirtual plugin.
-const inlineScriptContents: Record<number, string> = {}
+const inlineScriptContents: Record<string, string> = {}
 export function htmlScriptToVirtual(
   config: wxt.ResolvedConfig,
   getWxtDevServer: () => wxt.WxtDevServer | undefined,
@@ -87,9 +96,9 @@ export function htmlScriptToVirtual(
                 return
               }
               doFetch(url).then((textContent) => {
-                const hash = murmurHash(textContent)
-                inlineScriptContents[hash] = textContent
-                script.setAttribute(`src`, `${server.origin}/@id/${virtualInlineScript}?${hash}`)
+                const key = hash(textContent)
+                inlineScriptContents[key] = textContent
+                script.setAttribute(`src`, `${server.origin}/@id/${virtualInlineScript}?${key}`)
                 if (script.hasAttribute(`id`)) {
                   script.setAttribute(`type`, `module`)
                 }
@@ -123,8 +132,8 @@ export function htmlScriptToVirtual(
         // Resolve virtualized inline scripts
         if (id.startsWith(resolvedVirtualInlineScript)) {
           // id="virtual:md-inline-script?<hash>"
-          const hash = Number(id.substring(id.indexOf(`?`) + 1))
-          return inlineScriptContents[hash]
+          const key = id.substring(id.indexOf(`?`) + 1)
+          return inlineScriptContents[key]
         }
 
         // Ignore chunks during HTML file pre-rendering
@@ -158,12 +167,12 @@ export function htmlScriptToLocal(
                 return
               }
               const textContent = await doFetch(url)
-              const hash = murmurHash(textContent)
+              const key = hash(textContent)
               let jsName = url.match(/\/([^/]+)\.js$/)?.[1] ?? `.js`
               if (url.indexOf(`?`) > 0) {
                 jsName = `${url.substring(url.indexOf(`?`) + 1)}.js`
               }
-              const fileName = `${jsName.split(`.`)[0]}-${hash}.js`
+              const fileName = `${jsName.split(`.`)[0]}-${key}.js`
               // write to file
               const outFile = path.resolve(wxt.config.outDir, `./${fileName}`)
               await writeFile(outFile, textContent, `utf8`)
@@ -183,8 +192,8 @@ export function htmlScriptToLocal(
             promises.push(new Promise<void>(async (resolve) => {
               // Save the text content for later
               const textContent = script.textContent ?? ``
-              const hash = murmurHash(textContent)
-              const fileName = `md-inline-${hash}.js`
+              const key = hash(textContent)
+              const fileName = `md-inline-${key}.js`
               // write to file
               const outFile = path.resolve(wxt.config.outDir, `./${fileName}`)
               await writeFile(outFile, textContent, `utf8`)

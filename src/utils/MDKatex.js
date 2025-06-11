@@ -1,7 +1,7 @@
 const inlineRule = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1(?=[\s?!.,:？！。，：]|$)/
 const inlineRuleNonStandard = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/ // Non-standard, even if there are no spaces before and after $ or $$, try to parse
 
-const blockRule = /^(\${1,2})\n((?:\\[\s\S]|[^\\])+?)\n\1(?:\n|$)/
+const blockRule = /^\s{0,3}(\${1,2})[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/
 
 function createRenderer(display, inlineStyle, blockStyle) {
   return (token) => {
@@ -10,13 +10,15 @@ function createRenderer(display, inlineStyle, blockStyle) {
     const svg = mjxContainer.firstChild
     const width = svg.style[`min-width`] || svg.getAttribute(`width`)
     svg.removeAttribute(`width`)
-    svg.style = `max-width: 300vw !important;`
+
+    svg.style = `max-width: 300vw !important; display: initial; flex-shrink: 0;`
     svg.style.width = width
-    svg.style.display = `initial`
-    if (display) {
-      return `<section ${blockStyle}>${svg.outerHTML}</section>`
+
+    if (!display) {
+      return `<span ${inlineStyle}>${svg.outerHTML}</span>`
     }
-    return `<span ${inlineStyle}>${svg.outerHTML}</span>`
+
+    return `<section ${blockStyle}>${svg.outerHTML}</section>`
   }
 }
 
