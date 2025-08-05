@@ -37,10 +37,12 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.777.0",
     "@aws-sdk/s3-request-presigner": "^3.777.0",
+    "@exercism/highlightjs-gdscript": "^0.0.1",
     "@ssttevee/multipart-parser": "^0.1.9",
     "@vee-validate/yup": "^4.15.0",
     "@vueuse/core": "^12.5.0",
     "axios": "^1.8.4",
+    "browser-image-compression": "^2.0.2",
     "buffer-from": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
