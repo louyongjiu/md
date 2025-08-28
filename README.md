@@ -34,6 +34,7 @@ Markdown 文档自动即时渲染为微信图文，让你不再为微信内容�
 
 - [x] 支持 Markdown 所有基础语法、数学公式
 - [x] 提供对 Mermaid 图表的渲染和 [GFM 警告块](https://github.com/orgs/community/discussions/16925)的支持
+- [x] 提供 PlantUML 渲染支持
 - [x] 丰富的代码块高亮主题，提升代码可读性
 - [x] 允许自定义主题色和 CSS 样式，灵活定制展示效果
 - [x] 提供多图上传功能，并可自定义配置图床
@@ -73,28 +74,28 @@ Markdown 文档自动即时渲染为微信图文，让你不再为微信内容�
 nvm i && nvm use
 
 # 安装依赖
-npm i
+pnpm i
 
 # 启动开发模式
-npm start
+pnpm web dev
 
 # 部署在 /md 目录
-npm run build
+pnpm web build
 # 访问 http://127.0.0.1:9000/md
 
 # 部署在根目录
-npm run build:h5-netlify
+pnpm web build:h5-netlify
 # 访问 http://127.0.0.1:9000/
 
 # Chrome 插件启动及调试
-npm run ext:dev
+pnpm web ext:dev
 # 访问 chrome://extensions/ 打开开发者模式，加载已解压的扩展程序，选择 .output/chrome-mv3-dev 目录
 
 # Chrome 插件打包
-npm run ext:zip
+pnpm web ext:zip
 
 # Firefox 扩展打包(how to build Firefox addon)
-npm run firefox:zip # output zip file at in .output/md-{version}-firefox.zip
+pnpm web firefox:zip # output zip file at in .output/md-{version}-firefox.zip
 ```
 
 ## 快速搭建私有服务

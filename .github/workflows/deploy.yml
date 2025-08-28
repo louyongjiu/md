@@ -24,8 +24,13 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Determine build command
         id: build-command
@@ -37,15 +42,17 @@ jobs:
           fi
 
       - name: Run build
-        run: npm run ${{ env.BUILD_COMMAND }}
+        run: pnpm web ${{ env.BUILD_COMMAND }}
 
       - name: Generate CNAME
-        run: echo "md.doocs.org" > dist/CNAME
+        run: |
+          mkdir -p apps/web/dist
+          echo "md.doocs.org" > apps/web/dist/CNAME
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: apps/web/dist
 
   deploy:
     needs: build
